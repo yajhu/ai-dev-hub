@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${task.title} + ' — AI Dev Hub'">Task Detail — AI Dev Hub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a th:href="@{/}" class="navbar-logo">AI Dev Hub</a>
+            <ul class="navbar-nav">
+                <li><a th:href="@{/}">Projects</a></li>
+                <li><a th:href="@{/tasks}">Tasks</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+                <a th:href="@{/}">AI Dev Hub</a>
+                <span class="sep">/</span>
+                <th:block th:if="${project != null}">
+                    <a th:href="@{/tasks(projectId=${project.id})}" th:text="${project.name}">Project</a>
+                    <span class="sep">/</span>
+                </th:block>
+                <a th:href="@{/tasks(projectId=${task.projectId})}">Tasks</a>
+                <span class="sep">/</span>
+                <span class="current" th:text="${task.title}">Task Title</span>
+            </div>
+
+            <!-- Task Info -->
+            <div class="card">
+                <div class="flex-between mb-16">
+                    <h1 style="font-size:1.5rem;font-weight:700;" th:text="${task.title}">Task Title</h1>
+                    <span class="badge" th:classappend="'status-' + ${#strings.toLowerCase(task.status)}" th:text="${task.status}">PENDING</span>
+                </div>
+
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Task ID</span>
+                        <div class="detail-value" th:text="'#' + ${task.id}">#1</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Status</span>
+                        <div class="detail-value">
+                            <span class="badge" th:classappend="'status-' + ${#strings.toLowerCase(task.status)}" th:text="${task.status}">PENDING</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Priority</span>
+                        <div class="detail-value">
+                            <span class="badge" th:classappend="'badge-priority-' + ${#strings.toLowerCase(task.priority)}" th:text="${task.priority}">MEDIUM</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Source</span>
+                        <div class="detail-value" th:text="${task.source}">Manual</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">AI Model</span>
+                        <div class="detail-value" th:text="${task.aiModel}">claude-4.6</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Target Branch</span>
+                        <div class="detail-value" th:text="${task.targetBranch}">main</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Created</span>
+                        <div class="detail-value" th:text="${#temporals.format(task.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-01-01</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Updated</span>
+                        <div class="detail-value" th:text="${#temporals.format(task.updatedAt, 'yyyy-MM-dd HH:mm:ss')}">2026-01-01</div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div th:if="${task.description != null and !task.description.isEmpty()}">
+                    <h2 class="card-header">Description</h2>
+                    <div class="description-block" th:text="${task.description}">Task description.</div>
+                </div>
+
+                <!-- Acceptance Criteria -->
+                <div th:if="${task.acceptance != null and !task.acceptance.isEmpty()}">
+                    <h2 class="card-header" style="margin-top:20px;">Acceptance Criteria</h2>
+                    <div class="description-block" th:text="${task.acceptance}">Acceptance criteria.</div>
+                </div>
+            </div>
+
+            <!-- Pull Request Section -->
+            <div class="card" th:if="${prUrl != null}">
+                <h2 class="card-header">Pull Request</h2>
+                <a th:href="${prUrl}" target="_blank" rel="noopener" class="pr-link">
+                    <span th:text="${prUrl}">https://github.com/org/repo/pull/1</span>
+                    <span>&#8599;</span>
+                </a>
+            </div>
+
+            <!-- SonarQube Report Section -->
+            <div class="card" th:if="${sonarReport != null}">
+                <h2 class="card-header">SonarQube Report</h2>
+                <div class="description-block" th:text="${sonarReport}">SonarQube report details.</div>
+            </div>
+
+            <!-- Execution Timeline -->
+            <div class="card">
+                <h2 class="card-header">Execution Timeline</h2>
+                <ul class="timeline" th:if="${executions != null and !executions.isEmpty()}">
+                    <li class="timeline-item" th:each="exec : ${executions}">
+                        <span class="timeline-stage" th:text="${exec.stage}">PLAN</span>
+                        <div class="timeline-body">
+                            <span class="badge" th:classappend="'status-' + ${#strings.toLowerCase(exec.status)}" th:text="${exec.status}">RUNNING</span>
+                            <div class="timeline-output" th:if="${exec.output != null and !exec.output.isEmpty()}" th:text="${exec.output}">Output summary</div>
+                        </div>
+                        <div class="timeline-meta">
+                            <div th:if="${exec.startedAt != null}">
+                                <span th:text="${#temporals.format(exec.startedAt, 'MM-dd HH:mm')}"></span>
+                            </div>
+                            <div th:if="${exec.finishedAt != null}">
+                                &rarr; <span th:text="${#temporals.format(exec.finishedAt, 'MM-dd HH:mm')}"></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="timeline-empty" th:if="${executions == null or executions.isEmpty()}">
+                    No executions recorded yet.
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

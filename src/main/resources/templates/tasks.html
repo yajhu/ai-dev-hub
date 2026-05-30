@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:if="${project != null}" th:text="${project.name} + ' Tasks — AI Dev Hub'">Tasks — AI Dev Hub</title>
+    <title th:unless="${project != null}">All Tasks — AI Dev Hub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a th:href="@{/}" class="navbar-logo">AI Dev Hub</a>
+            <ul class="navbar-nav">
+                <li><a th:href="@{/}">Projects</a></li>
+                <li><a th:href="@{/tasks}" class="active">Tasks</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+                <a th:href="@{/}">AI Dev Hub</a>
+                <span class="sep">/</span>
+                <th:block th:if="${project != null}">
+                    <span class="current" th:text="${project.name}">Project</span>
+                    <span class="sep">/</span>
+                </th:block>
+                <span class="current">Tasks</span>
+            </div>
+
+            <div class="flex-between mb-24">
+                <h1 class="page-title" style="margin-bottom:0;" th:if="${project != null}" th:text="${project.name} + ' Tasks'">Project Tasks</h1>
+                <h1 class="page-title" style="margin-bottom:0;" th:unless="${project != null}">All Tasks</h1>
+                <div class="flex-row">
+                    <a th:href="@{/tasks/create(projectId=${projectId})}" class="btn btn-primary">+ Create Task</a>
+                </div>
+            </div>
+
+            <div class="card" style="padding:0;">
+                <div class="table-wrapper" th:if="${tasks != null and !tasks.isEmpty()}">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="task : ${tasks}">
+                                <td><code style="color:var(--text-muted);">#<span th:text="${task.id}">1</span></code></td>
+                                <td>
+                                    <a th:href="@{/tasks/{id}(id=${task.id})}" style="color:var(--accent);text-decoration:none;" th:text="${task.title}">Task Title</a>
+                                </td>
+                                <td>
+                                    <span class="badge" th:classappend="'status-' + ${#strings.toLowerCase(task.status)}" th:text="${task.status}">PENDING</span>
+                                </td>
+                                <td>
+                                    <span class="badge" th:classappend="'badge-priority-' + ${#strings.toLowerCase(task.priority)}" th:text="${task.priority}">MEDIUM</span>
+                                </td>
+                                <td class="text-muted" style="font-size:0.85rem;" th:text="${#temporals.format(task.createdAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
+                                <td>
+                                    <a th:href="@{/tasks/{id}(id=${task.id})}" class="btn btn-secondary btn-sm">View</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="empty-state" th:if="${tasks == null or tasks.isEmpty()}">
+                    <span class="empty-state-icon">&#128196;</span>
+                    <p>No tasks found.</p>
+                    <a th:href="@{/tasks/create(projectId=${projectId})}" class="btn btn-primary mt-16">Create Task</a>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

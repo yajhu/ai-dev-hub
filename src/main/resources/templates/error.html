@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${status} + ' — AI Dev Hub'">Error — AI Dev Hub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <a href="/" class="header-title">AI Dev Hub</a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="error-page">
+                <div class="error-code" th:text="${status}">500</div>
+                <p class="error-message" th:if="${error != null}" th:text="${error}">Something went wrong.</p>
+                <p class="error-message" th:if="${message != null}" th:text="${message}">An unexpected error occurred.</p>
+                <p class="text-secondary" th:if="${path != null}">
+                    Path: <code th:text="${path}" style="background:var(--bg-tertiary);padding:2px 8px;border-radius:4px;">/path</code>
+                </p>
+                <div class="mt-24">
+                    <a href="/" class="btn btn-primary">Go Home</a>
+                    <a th:href="@{/tasks}" class="btn btn-secondary">View Tasks</a>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

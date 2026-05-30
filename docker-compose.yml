@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: aidevhub
+      POSTGRES_USER: aidevhub
+      POSTGRES_PASSWORD: aidevhub
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aidevhub
+      SPRING_DATASOURCE_USERNAME: aidevhub
+      SPRING_DATASOURCE_PASSWORD: aidevhub
+
+volumes:
+  pgdata:

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Dev Hub — Projects</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a th:href="@{/}" class="navbar-logo">AI Dev Hub</a>
+            <ul class="navbar-nav">
+                <li><a th:href="@{/}" class="active">Projects</a></li>
+                <li><a th:href="@{/tasks}">Tasks</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="container">
+            <h1 class="page-title">Projects</h1>
+
+            <div class="project-grid" th:if="${projects != null and !projects.isEmpty()}">
+                <div class="project-card" th:each="project : ${projects}">
+                    <div class="project-card-name" th:text="${project.name}">Project Name</div>
+                    <div class="project-card-meta">
+                        <span class="label">Tech Stack</span>
+                        <span th:text="${project.techStack}">Spring Boot</span>
+                    </div>
+                    <div class="project-card-meta">
+                        <span class="label">Repository</span>
+                        <span th:text="${project.repoUrl}" style="word-break:break-all;">github.com/org/repo</span>
+                    </div>
+                    <div class="project-card-meta" th:if="${project.sonarKey != null and !project.sonarKey.isEmpty()}">
+                        <span class="label">SonarQube</span>
+                        <span th:text="${project.sonarKey}">project-key</span>
+                    </div>
+                    <div class="project-card-footer">
+                        <span class="project-card-time" th:if="${project.updatedAt != null}">
+                            Updated <span th:text="${#temporals.format(project.updatedAt, 'yyyy-MM-dd HH:mm')}"></span>
+                        </span>
+                        <span class="project-card-time" th:unless="${project.updatedAt != null}">
+                            Created <span th:text="${#temporals.format(project.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+                        </span>
+                        <a th:href="@{/tasks(projectId=${project.id})}" class="btn btn-primary btn-sm">View Tasks</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empty-state" th:if="${projects == null or projects.isEmpty()}">
+                <span class="empty-state-icon">&#128193;</span>
+                <p>No projects yet. Add a project to get started.</p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
