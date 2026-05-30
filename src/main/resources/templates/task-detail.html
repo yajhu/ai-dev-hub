@@ -57,8 +57,6 @@
                         </div>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-label">Source</span>
-                        <div class="detail-value" th:text="${task.source}">Manual</div>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">AI Model</span>
@@ -66,7 +64,7 @@
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">Target Branch</span>
-                        <div class="detail-value" th:text="${task.targetBranch}">main</div>
+                        <div class="detail-value" th:text="${task.branchName}">main</div>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">Created</span>
@@ -84,11 +82,7 @@
                     <div class="description-block" th:text="${task.description}">Task description.</div>
                 </div>
 
-                <!-- Acceptance Criteria -->
-                <div th:if="${task.acceptance != null and !task.acceptance.isEmpty()}">
-                    <h2 class="card-header" style="margin-top:20px;">Acceptance Criteria</h2>
-                    <div class="description-block" th:text="${task.acceptance}">Acceptance criteria.</div>
-                </div>
+                
             </div>
 
             <!-- Pull Request Section -->
@@ -111,17 +105,17 @@
                 <h2 class="card-header">Execution Timeline</h2>
                 <ul class="timeline" th:if="${executions != null and !executions.isEmpty()}">
                     <li class="timeline-item" th:each="exec : ${executions}">
-                        <span class="timeline-stage" th:text="${exec.stage}">PLAN</span>
+                        <span class="timeline-stage" th:text="${exec.stageType}">PLAN</span>
                         <div class="timeline-body">
-                            <span class="badge" th:classappend="'status-' + ${#strings.toLowerCase(exec.status)}" th:text="${exec.status}">RUNNING</span>
+                            <span class="badge" th:classappend="'status-' + ${#strings.toLowerCase(exec.status.name())}" th:text="${exec.status.name()}">RUNNING</span>
                             <div class="timeline-output" th:if="${exec.output != null and !exec.output.isEmpty()}" th:text="${exec.output}">Output summary</div>
                         </div>
                         <div class="timeline-meta">
-                            <div th:if="${exec.startedAt != null}">
-                                <span th:text="${#temporals.format(exec.startedAt, 'MM-dd HH:mm')}"></span>
+                            <div th:if="${exec.startTime != null}">
+                                <span th:text="${#temporals.format(exec.startTime, 'MM-dd HH:mm')}"></span>
                             </div>
-                            <div th:if="${exec.finishedAt != null}">
-                                &rarr; <span th:text="${#temporals.format(exec.finishedAt, 'MM-dd HH:mm')}"></span>
+                            <div th:if="${exec.endTime != null}">
+                                &rarr; <span th:text="${#temporals.format(exec.endTime, 'MM-dd HH:mm')}"></span>
                             </div>
                         </div>
                     </li>

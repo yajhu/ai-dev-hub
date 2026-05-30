@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 项目管理接口
  */
 @RestController
-@RequestMapping("/projects")
+@RequestMapping("/api/projects")
 @RequiredArgsConstructor
 public class ProjectController {
 
@@ -25,8 +25,8 @@ public class ProjectController {
      */
     @PostMapping
     public Result<Project> create(@RequestBody Project project) {
-        project.setCreateTime(LocalDateTime.now());
-        project.setUpdateTime(LocalDateTime.now());
+        project.setCreatedAt(LocalDateTime.now());
+        project.setUpdatedAt(LocalDateTime.now());
         projectMapper.insert(project);
         return Result.ok(project);
     }
@@ -50,7 +50,7 @@ public class ProjectController {
     public Result<Page<Project>> page(@RequestParam(defaultValue = "1") int current,
                                       @RequestParam(defaultValue = "10") int size) {
         Page<Project> page = new Page<>(current, size);
-        return Result.ok(projectMapper.selectPage(page, new QueryWrapper<Project>().orderByDesc("create_time")));
+        return Result.ok(projectMapper.selectPage(page, new QueryWrapper<Project>().orderByDesc("created_at")));
     }
 
     /**
@@ -59,7 +59,7 @@ public class ProjectController {
     @PutMapping("/{id}")
     public Result<Project> update(@PathVariable Long id, @RequestBody Project project) {
         project.setId(id);
-        project.setUpdateTime(LocalDateTime.now());
+        project.setUpdatedAt(LocalDateTime.now());
         projectMapper.updateById(project);
         return Result.ok(projectMapper.selectById(id));
     }

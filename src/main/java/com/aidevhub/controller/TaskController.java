@@ -1,6 +1,8 @@
 package com.aidevhub.controller;
 
 import com.aidevhub.common.Result;
+import com.aidevhub.common.TaskStatus;
+import com.aidevhub.common.TaskStatusUpdateRequest;
 import com.aidevhub.model.Task;
 import com.aidevhub.service.PipelineService;
 import com.aidevhub.service.TaskService;
@@ -9,10 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 任务管理接口
+ * 任务管理接口 — REST API for /api/tasks
  */
 @RestController
-@RequestMapping("/tasks")
+@RequestMapping("/api/tasks")
 @RequiredArgsConstructor
 public class TaskController {
 
@@ -20,54 +22,62 @@ public class TaskController {
     private final PipelineService pipelineService;
 
     /**
-     * 创建任务
+     * POST /api/tasks — 创建任务
      */
     @PostMapping
     public Result<Task> create(@RequestBody Task task) {
-        return Result.ok(taskService.create(task));
+        return Result.ok(taskService.createTask(task));
     }
 
     /**
-     * 查询单个任务
+     * GET /api/tasks/{id} — 查询单个任务
      */
     @GetMapping("/{id}")
     public Result<Task> getById(@PathVariable Long id) {
-        return Result.ok(taskService.getById(id));
+        return Result.ok(taskService.getTask(id));
     }
 
     /**
-     * 分页查询任务列表
+     * GET /api/tasks?projectId=xx&page=1&size=10 — 按项目分页查询任务列表
      */
     @GetMapping
-    public Result<Page<Task>> page(@RequestParam(defaultValue = "1") int current,
-                                   @RequestParam(defaultValue = "10") int size) {
-        return Result.ok(taskService.page(current, size));
+    public Result<Page<Task>> list(@RequestParam Long projectId,
+                                   @RequestParam(defaultValue = "1") Integer page,
+                                   @RequestParam(defaultValue = "10") Integer size) {
+        return Result.ok(taskService.listTasks(projectId, page, size));
     }
 
     /**
-     * 更新任务
+     * PUT /api/tasks/{id} — 更新任务（仅title/description/acceptance/priority）
      */
     @PutMapping("/{id}")
     public Result<Task> update(@PathVariable Long id, @RequestBody Task task) {
-        task.setId(id);
-        return Result.ok(taskService.update(task));
+        return Result.ok(taskService.updateTask(id, task));
     }
 
     /**
-     * 删除任务
+     * DELETE /api/tasks/{id} — 删除任务
      */
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
-        taskService.delete(id);
+        taskService.deleteTask(id);
         return Result.ok(null);
     }
 
     /**
-     * 执行任务流水线
+     * PUT /api/tasks/{id}/status — 更新任务状态
+     */
+    @PutMapping("/{id}/status")
+    public Result<Task> updateStatus(@PathVariable Long id, @RequestBody TaskStatusUpdateRequest request) {
+        return Result.ok(taskService.updateStatus(id, TaskStatus.valueOf(request.getStatus())));
+    }
+
+    /**
+     * POST /api/tasks/{id}/execute — 触发任务编排
      */
     @PostMapping("/{id}/execute")
-    public Result<Void> execute(@PathVariable Long id, @RequestParam String scriptPath) {
-        pipelineService.executeTask(id, scriptPath);
-        return Result.ok(null);
+    public Result<String> execute(@PathVariable Long id) {
+        pipelineService.executeTask(id);
+        return Result.ok("编排已触发");
     }
 }

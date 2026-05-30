@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
  * 执行记录管理接口
  */
 @RestController
-@RequestMapping("/executions")
+@RequestMapping("/api/executions")
 @RequiredArgsConstructor
 public class ExecutionController {
 
@@ -24,12 +24,10 @@ public class ExecutionController {
     @GetMapping
     public Result<Page<Execution>> page(@RequestParam(defaultValue = "1") int current,
                                         @RequestParam(defaultValue = "10") int size,
-                                        @RequestParam(required = false) Long taskId) {
+                                        @RequestParam Long taskId) {
         Page<Execution> page = new Page<>(current, size);
-        QueryWrapper<Execution> wrapper = new QueryWrapper<Execution>().orderByDesc("create_time");
-        if (taskId != null) {
-            wrapper.eq("task_id", taskId);
-        }
+        QueryWrapper<Execution> wrapper = new QueryWrapper<Execution>().orderByDesc("created_at");
+        wrapper.eq("task_id", taskId);
         return Result.ok(executionMapper.selectPage(page, wrapper));
     }
 

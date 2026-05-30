@@ -24,7 +24,7 @@ def get_task(task_id):
     conn = _get_conn()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT * FROM tasks WHERE id = %s", (task_id,))
+            cur.execute("SELECT * FROM task WHERE id = %s", (task_id,))
             row = cur.fetchone()
             if row is None:
                 return {"error": f"Task {task_id} not found"}
@@ -39,7 +39,7 @@ def update_task_status(task_id, status):
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "UPDATE tasks SET status = %s, updated_at = NOW() WHERE id = %s RETURNING *",
+                "UPDATE task SET status = %s, updated_at = NOW() WHERE id = %s RETURNING *",
                 (status, task_id),
             )
             row = cur.fetchone()
@@ -57,7 +57,7 @@ def create_execution(task_id, stage, status):
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                """INSERT INTO executions (task_id, stage, status, started_at)
+                """INSERT INTO execution (task_id, stage, status, started_at)
                    VALUES (%s, %s, %s, NOW()) RETURNING *""",
                 (task_id, stage, status),
             )
@@ -75,14 +75,14 @@ def update_execution(execution_id, status, output=None):
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             if output is not None:
                 cur.execute(
-                    """UPDATE executions
+                    """UPDATE execution
                        SET status = %s, output = %s, updated_at = NOW()
                        WHERE id = %s RETURNING *""",
                     (status, json.dumps(output), execution_id),
                 )
             else:
                 cur.execute(
-                    """UPDATE executions
+                    """UPDATE execution
                        SET status = %s, updated_at = NOW()
                        WHERE id = %s RETURNING *""",
                     (status, execution_id),

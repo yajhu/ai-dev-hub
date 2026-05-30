@@ -11,10 +11,7 @@ import lombok.EqualsAndHashCode;
 public class QualityGate extends BaseEntity {
 
     private Long projectId;
-
     private String ruleType;
-
     private String ruleConfig;
-
     private Boolean enabled;
 }

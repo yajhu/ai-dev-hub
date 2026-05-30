@@ -1,5 +1,6 @@
 package com.aidevhub.controller;
 
+import com.aidevhub.common.TaskStatus;
 import com.aidevhub.mapper.ExecutionMapper;
 import com.aidevhub.mapper.ProjectMapper;
 import com.aidevhub.mapper.TaskMapper;
@@ -66,7 +67,7 @@ public class WebController {
 
     @PostMapping("/tasks")
     public String createTask(Task task) {
-        task.setStatus("PENDING");
+        task.setStatus(TaskStatus.PENDING.name());
         task.setCreatedAt(LocalDateTime.now());
         task.setUpdatedAt(LocalDateTime.now());
         taskMapper.insert(task);

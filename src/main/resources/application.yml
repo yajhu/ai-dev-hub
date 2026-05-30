@@ -5,10 +5,14 @@ spring:
   application:
     name: ai-dev-hub
   datasource:
-    url: jdbc:mysql://localhost:3306/ai_dev_hub?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    url: jdbc:postgresql://localhost:5432/aidevhub
     username: root
-    password: root
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: aidevhub123
+    driver-class-name: org.postgresql.Driver
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
 
 mybatis-plus:
   configuration:
@@ -17,6 +21,11 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
+
+# SonarQube 配置
+sonarqube:
+  url: http://localhost:9000
+
+# Pipeline 配置
+pipeline:
+  workdir: /home/huyajun/workspace/ai-dev-hub

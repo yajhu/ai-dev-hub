@@ -3,45 +3,47 @@ package com.aidevhub.service;
 import com.aidevhub.common.TaskStatus;
 import com.aidevhub.mapper.TaskMapper;
 import com.aidevhub.model.Task;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
-/**
- * 任务服务 — CRUD + 严格状态机
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TaskService {
 
     private final TaskMapper taskMapper;
 
-    /** 允许的状态转换表：PENDING→PLANNING→CODING→REVIEWING→PR_OPEN→DEPLOYED */
     private static final TaskStatus[] FORWARD_PATH = {
-        TaskStatus.PENDING, TaskStatus.PLANNING, TaskStatus.CODING,
-        TaskStatus.REVIEWING, TaskStatus.PR_OPEN, TaskStatus.DEPLOYED
+            TaskStatus.PENDING,
+            TaskStatus.PLANNING,
+            TaskStatus.CODING,
+            TaskStatus.REVIEWING,
+            TaskStatus.PR_OPEN,
+            TaskStatus.DEPLOYED
     };
 
-    /**
-     * 创建任务，初始状态为PENDING
-     */
+    private boolean isTerminal(TaskStatus status) {
+        return status == TaskStatus.DEPLOYED || status == TaskStatus.FAILED;
+    }
+
     @Transactional
-    public Task create(Task task) {
-        task.setStatus(TaskStatus.PENDING);
-        task.setCreateTime(LocalDateTime.now());
-        task.setUpdateTime(LocalDateTime.now());
+    public Task createTask(Task task) {
+        task.setStatus(TaskStatus.PENDING.name());
+        task.setCreatedAt(LocalDateTime.now());
+        task.setUpdatedAt(LocalDateTime.now());
         taskMapper.insert(task);
+        log.info("任务创建成功: id={}, title={}", task.getId(), task.getTitle());
         return task;
     }
 
-    /**
-     * 根据ID查询任务
-     */
-    public Task getById(Long id) {
+    public Task getTask(Long id) {
         Task task = taskMapper.selectById(id);
         if (task == null) {
             throw new IllegalArgumentException("任务不存在: " + id);
@@ -49,82 +51,108 @@ public class TaskService {
         return task;
     }
 
-    /**
-     * 分页查询任务列表
-     */
-    public Page<Task> page(int current, int size) {
-        Page<Task> page = new Page<>(current, size);
-        return taskMapper.selectPage(page, new QueryWrapper<Task>().orderByDesc("create_time"));
+    public Page<Task> listTasks(Long projectId, Integer page, Integer size) {
+        int current = (page == null || page < 1) ? 1 : page;
+        int pageSize = (size == null || size < 1) ? 10 : size;
+        Page<Task> p = new Page<>(current, pageSize);
+        LambdaQueryWrapper<Task> wrapper = new LambdaQueryWrapper<Task>()
+                .eq(Task::getProjectId, projectId)
+                .orderByDesc(Task::getCreatedAt);
+        return taskMapper.selectPage(p, wrapper);
     }
 
-    /**
-     * 更新任务基本信息
-     */
-    @Transactional
-    public Task update(Task task) {
-        Task existing = getById(task.getId());
-        if (existing.getStatus().isTerminal()) {
-            throw new IllegalStateException("终态任务不可修改");
-        }
-        task.setUpdateTime(LocalDateTime.now());
-        taskMapper.updateById(task);
-        return getById(task.getId());
+    public Page<Task> pageAll(Integer page, Integer size) {
+        int current = (page == null || page < 1) ? 1 : page;
+        int pageSize = (size == null || size < 1) ? 10 : size;
+        Page<Task> p = new Page<>(current, pageSize);
+        LambdaQueryWrapper<Task> wrapper = new LambdaQueryWrapper<Task>()
+                .orderByDesc(Task::getCreatedAt);
+        return taskMapper.selectPage(p, wrapper);
     }
 
-    /**
-     * 删除任务
-     */
     @Transactional
-    public void delete(Long id) {
-        Task task = getById(id);
-        if (task.getStatus().isTerminal()) {
-            throw new IllegalStateException("终态任务不可删除");
+    public Task updateTask(Long id, Task input) {
+        Task existing = getTask(id);
+        TaskStatus currentStatus = TaskStatus.valueOf(existing.getStatus());
+        if (isTerminal(currentStatus)) {
+            throw new IllegalStateException("终态任务不可修改，当前状态: " + currentStatus.name());
         }
+
+        if (StringUtils.hasText(input.getTitle())) {
+            existing.setTitle(input.getTitle());
+        }
+        if (StringUtils.hasText(input.getDescription())) {
+            existing.setDescription(input.getDescription());
+        }
+        if (StringUtils.hasText(input.getAcceptance())) {
+            existing.setAcceptance(input.getAcceptance());
+        }
+        if (StringUtils.hasText(input.getPriority())) {
+            existing.setPriority(input.getPriority());
+        }
+        existing.setUpdatedAt(LocalDateTime.now());
+        taskMapper.updateById(existing);
+        log.info("任务更新成功: id={}", id);
+        return getTask(id);
+    }
+
+    @Transactional
+    public void deleteTask(Long id) {
+        getTask(id);
         taskMapper.deleteById(id);
+        log.info("任务删除成功: id={}", id);
     }
 
-    /**
-     * 严格状态机转换：PENDING→PLANNING→CODING→REVIEWING→PR_OPEN→DEPLOYED，
-     * FAILED可从任意非终态转入，终态(DEPLOYED/FAILED)不可再变更
-     */
     @Transactional
-    public Task transitionStatus(Long taskId, TaskStatus targetStatus) {
-        Task task = getById(taskId);
-        TaskStatus current = task.getStatus();
+    public Task updateStatus(Long taskId, TaskStatus newStatus) {
+        Task task = getTask(taskId);
+        TaskStatus currentStatus = TaskStatus.valueOf(task.getStatus());
 
-        if (current.isTerminal()) {
+        if (isTerminal(currentStatus)) {
             throw new IllegalStateException(
-                "当前状态[" + current.getDescription() + "]为终态，不可再变更");
+                    "任务已处于终态[" + currentStatus.name() + "]，不能变更状态");
         }
 
-        if (!current.canTransitionTo(targetStatus)) {
+        if (newStatus == TaskStatus.FAILED) {
+            task.setStatus(TaskStatus.FAILED.name());
+            task.setUpdatedAt(LocalDateTime.now());
+            taskMapper.updateById(task);
+            log.info("任务状态变更: id={}, {} → {}", taskId, currentStatus.name(), TaskStatus.FAILED.name());
+            return task;
+        }
+
+        boolean validForward = false;
+        for (int i = 0; i < FORWARD_PATH.length - 1; i++) {
+            if (FORWARD_PATH[i] == currentStatus && FORWARD_PATH[i + 1] == newStatus) {
+                validForward = true;
+                break;
+            }
+        }
+
+        if (!validForward) {
             throw new IllegalStateException(
-                "不允许从[" + current.getDescription() + "]转换到[" + targetStatus.getDescription() + "]，"
-                + "只能按序推进或转入失败状态");
+                    "状态不能从 " + currentStatus.name() + " 跳转到 " + newStatus.name());
         }
 
-        task.setStatus(targetStatus);
-        task.setUpdateTime(LocalDateTime.now());
-        if (targetStatus == TaskStatus.FAILED) {
-            task.setErrorMessage("任务进入失败状态");
-        }
+        task.setStatus(newStatus.name());
+        task.setUpdatedAt(LocalDateTime.now());
         taskMapper.updateById(task);
+        log.info("任务状态变更: id={}, {} → {}", taskId, currentStatus.name(), newStatus.name());
         return task;
     }
 
-    /**
-     * 将任务标记为失败
-     */
     @Transactional
-    public Task markFailed(Long taskId, String errorMessage) {
-        Task task = getById(taskId);
-        if (task.getStatus().isTerminal()) {
+    public Task markFailed(Long taskId) {
+        Task task = getTask(taskId);
+        TaskStatus currentStatus = TaskStatus.valueOf(task.getStatus());
+        if (isTerminal(currentStatus)) {
             throw new IllegalStateException("终态任务不可再变更");
         }
-        task.setStatus(TaskStatus.FAILED);
-        task.setErrorMessage(errorMessage);
-        task.setUpdateTime(LocalDateTime.now());
+        task.setStatus(TaskStatus.FAILED.name());
+        task.setUpdatedAt(LocalDateTime.now());
         taskMapper.updateById(task);
+        log.info("任务标记为失败: id={}", taskId);
         return task;
     }
+
 }
