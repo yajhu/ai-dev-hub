@@ -1,44 +1,75 @@
 package com.aidevhub.controller;
 
-import com.aidevhub.common.BusinessException;
 import com.aidevhub.common.Result;
 import com.aidevhub.mapper.ProjectMapper;
 import com.aidevhub.model.Project;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
+/**
+ * 项目管理接口
+ */
 @RestController
 @RequestMapping("/projects")
+@RequiredArgsConstructor
 public class ProjectController {
 
-    @Autowired
-    private ProjectMapper projectMapper;
+    private final ProjectMapper projectMapper;
 
+    /**
+     * 创建项目
+     */
     @PostMapping
-    public Result<Project> createProject(@RequestBody Project project) {
+    public Result<Project> create(@RequestBody Project project) {
+        project.setCreateTime(LocalDateTime.now());
+        project.setUpdateTime(LocalDateTime.now());
         projectMapper.insert(project);
         return Result.ok(project);
     }
 
-    @GetMapping
-    public Result<List<Project>> listProjects() {
-        List<Project> projects = projectMapper.selectList(null);
-        return Result.ok(projects);
-    }
-
+    /**
+     * 查询单个项目
+     */
     @GetMapping("/{id}")
-    public Result<Project> getProject(@PathVariable Long id) {
+    public Result<Project> getById(@PathVariable Long id) {
         Project project = projectMapper.selectById(id);
         if (project == null) {
-            throw new BusinessException(404, "Project not found: " + id);
+            throw new IllegalArgumentException("项目不存在: " + id);
         }
         return Result.ok(project);
+    }
+
+    /**
+     * 分页查询项目列表
+     */
+    @GetMapping
+    public Result<Page<Project>> page(@RequestParam(defaultValue = "1") int current,
+                                      @RequestParam(defaultValue = "10") int size) {
+        Page<Project> page = new Page<>(current, size);
+        return Result.ok(projectMapper.selectPage(page, new QueryWrapper<Project>().orderByDesc("create_time")));
+    }
+
+    /**
+     * 更新项目
+     */
+    @PutMapping("/{id}")
+    public Result<Project> update(@PathVariable Long id, @RequestBody Project project) {
+        project.setId(id);
+        project.setUpdateTime(LocalDateTime.now());
+        projectMapper.updateById(project);
+        return Result.ok(projectMapper.selectById(id));
+    }
+
+    /**
+     * 删除项目
+     */
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable Long id) {
+        projectMapper.deleteById(id);
+        return Result.ok(null);
     }
 }
